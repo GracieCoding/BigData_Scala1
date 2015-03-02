@@ -47,37 +47,6 @@ object Main {
     }
   }
 
-  def merge_sort(List m) {
-   if length(m) <= 1
-     return m
-   var (left, right) = m.splitAt(length(m)/2)
-
-   left = merge_sort(left)
-   right = merge_sort(right)
-
-   merge(left, right)
-  }
-
-  def merge(left, right) {
-    var list result
-    while !left.isEmpty and !right.isEmpty {
-      if first(left) <= first(right)
-        append first(left) to result; left = rest(left)
-      else
-        append first(right) to result; right = rest(right)
-    }
-
-    while !left.isEmpty{
-      append first(left) to result
-      left = rest(left)
-     }
-    while !right.isEmpty{
-      append first(right) to result
-      right = rest(right)
-    }
-    return result
-  ￼}
-
   def main(args: Array[String]) : Unit = {
 
     val fileName = args(0)
