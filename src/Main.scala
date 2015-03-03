@@ -47,15 +47,15 @@ object Main {
   }
 
   //Hypergeometric distribution
-  /*
-  def HyperCalculate(popSize: Int, catsizeX:Int,category:String, numK:Int, topK:Array[Data]): Unit = {
-    val numcatTopK= CatXinTopK(category, topK)
-    var cal= Combination(catsizeX)*Combination(popSize-catsizeX)
-    var cal2= cal/(Combination(numcatTopK)*Combination(catsizeX-numcatTopK)*Combination(numK-numcatTopK)*Combination(popSize-catsizeX-numK+numcatTopK)  )
 
+  def HyperCalculate(popSize: Int, catsizeX:Int,category:String, numK:Int, topK:Array[Data]): Int = {
+    val numcatTopK= CatXinTopK(category, topK)
+    var caltop= Combination(catsizeX) * Combination(popSize-catsizeX) * Combination(popSize-numK) * Combination(numK)
+    var calbot= Combination(popSize) * Combination(numcatTopK) * Combination(catsizeX-numcatTopK) * Combination(numK-numcatTopK)*Combination(popSize-catsizeX-numK+numcatTopK)
+    return caltop/calbot
   }
-*/
-  def CatXinTopK(category: String, topK:Array[Data]):Unit = {
+
+  def CatXinTopK(category: String, topK:Array[Data]):Int = {
     var count=0;
     for ( i <- 0 until topK.length) {
       if(topK(i).getCategory()==category)
@@ -64,13 +64,13 @@ object Main {
     return count
   }
   //returns combination of number
-  def Combination(x: Int):Unit= {
+  def Combination(x: Int):Int= {
     if (x<1)
       return -1;
     else
       recurCom(x,1);
   }
-  def recurCom(x:Int, total:Int):Unit = {
+  def recurCom(x:Int, total:Int):Int = {
     if (x>1)
       recurCom(x-1, total*x)
     else
@@ -153,6 +153,12 @@ object Main {
 
     getTopK(queue, k, topK, index)
 
+    var HyperMap : Map[String,Int] = Map()
+
+    myMap.keys.foreach { i =>
+      HyperMap += (i -> HyperCalculate(N,myMap(i),i,k,topK))
+    }
+
     for (i <-0 until topK.length){
       println(topK(i).getScore())
     }
@@ -160,6 +166,7 @@ object Main {
     myMap.keys.foreach {i =>
       println("Keys: " + i)
       println("value: " + myMap(i))
+      println("hyperval: " + HyperMap(i))
     }
 
 
