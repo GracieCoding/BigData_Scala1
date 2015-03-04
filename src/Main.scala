@@ -2,7 +2,8 @@
  * Created by Grace & Gabriela.
  */
 
-import scala.collection.mutable.{Map, PriorityQueue}
+import scala.collection.mutable.Map
+import scala.collection.mutable.PriorityQueue
 import scala.io.Source
 
 object Main {
@@ -11,7 +12,7 @@ object Main {
 
   def isNewCategory(myList: List[Data], x: String, field: Field[Int]): Unit = {
     if (!myList.isEmpty){
-      if (myList.head.getCategory() == x){
+      if (myList.head.getCategory() == x) {
         field.value = 0
       }
       isNewCategory(myList.tail, x, field)
@@ -48,10 +49,10 @@ object Main {
 
   //Hypergeometric distribution
 
-  def HyperCalculate(popSize: Int, catsizeX:Int,category:String, numK:Int, topK:Array[Data]): Int = {
+  def HyperCalculate(popSize: Int, catsizeX:Int,category:String, numK:Int, topK:Array[Data]): Float = {
     val numcatTopK= CatXinTopK(category, topK)
-    var caltop= Combination(catsizeX) * Combination(popSize-catsizeX) * Combination(popSize-numK) * Combination(numK)
-    var calbot= Combination(popSize) * Combination(numcatTopK) * Combination(catsizeX-numcatTopK) * Combination(numK-numcatTopK)*Combination(popSize-catsizeX-numK+numcatTopK)
+    var caltop:Float = Combination(catsizeX) * Combination(popSize-catsizeX) * Combination(popSize-numK) * Combination(numK)
+    var calbot: Float = Combination(popSize) * Combination(numcatTopK) * Combination(catsizeX-numcatTopK) * Combination(numK-numcatTopK)*Combination(popSize-catsizeX-numK+numcatTopK)
     return caltop/calbot
   }
 
@@ -66,23 +67,24 @@ object Main {
   //returns combination of number
   def Combination(x: Int):Int= {
     if (x<1)
-      return -1;
+      return -1
     else
-      recurCom(x,1);
+      return recurCom(x,1)
+
   }
   def recurCom(x:Int, total:Int):Int = {
     if (x>1)
       recurCom(x-1, total*x)
     else
-      return total;
+      return total
   }
 
 
-/*
-  def merge_sort(List m) {
-   if length(m) <= 1
+//look at List on web and find length func name
+  def merge_sort(m: List[Data]): List[Data] = {
+   if (m.length <= 1)
      return m
-   var (left, right) = m.splitAt(length(m)/2)
+   var (left, right) = m.splitAt(m.length / 2)
 
    left = merge_sort(left)
    right = merge_sort(right)
@@ -90,26 +92,30 @@ object Main {
    merge(left, right)
   }
 
-  def merge(left, right) {
-    var list result
-    while (!left.isEmpty and !right.isEmpty) {
-      if first(left) <= first(right)
-        append first(left) to result; left = rest(left)
-      else
-        append first(right) to result; right = rest(right)
+  def merge(left: List[Data], right: List[Data]):List[Data] = {
+    var result= List[Data]()
+    var l= left; var r=right
+    while (!l.isEmpty && !r.isEmpty) {
+      if (l.head.getScore() <= r.head.getScore() ){
+        result= l.head :: result
+        l = l.tail
+      } else {
+        result = r.head :: result
+        r = r.tail
+      }
     }
 
-    while !left.isEmpty{
-      append first(left) to result
-      left = rest(left)
+    while (!l.isEmpty){
+      result= l.head :: result
+      l = l.tail
      }
-    while !right.isEmpty{
-      append first(right) to result
-      right = rest(right)
+    while (!r.isEmpty){
+      result = r.head :: result
+      r = r.tail
     }
     return result
-  ￼}
-  */
+  }
+
 
   def main(args: Array[String]) : Unit = {
 
@@ -153,7 +159,7 @@ object Main {
 
     getTopK(queue, k, topK, index)
 
-    var HyperMap : Map[String,Int] = Map()
+    var HyperMap : Map[String,Float] = Map()
 
     myMap.keys.foreach { i =>
       HyperMap += (i -> HyperCalculate(N,myMap(i),i,k,topK))
