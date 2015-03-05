@@ -68,7 +68,7 @@ object Main {
   }
   //returns combination of number
   def Combination(x: Int):Int= {
-    if (x<1)
+    if (x<0)
       return -1
     else
       return recurCom(x,1)
