@@ -30,10 +30,23 @@ object Main {
     }
   }*/
 
-  def putStuffInQueue(myQueue: PriorityQueue[Data], myList: List[Data]) : Unit = {
-    if (!myList.isEmpty){
-      myQueue.enqueue(myList.head)
-      putStuffInQueue(myQueue, myList.tail)
+  def putStuffInQueue(myQueue: PriorityQueue[Data], k: Int, counter: Field[Int], myData: Data) : PriorityQueue[Data] = {
+    if (counter.value < k) {
+      myQueue.enqueue(myData)
+      counter.value += 1
+      myQueue
+    }
+    else {
+      if (myData.getScore() > myQueue.min(Ordering.by(greaterThan)).getScore() ){
+        var tempQueue = myQueue.reverse
+        tempQueue.dequeue()
+        tempQueue = tempQueue.reverse
+        tempQueue.enqueue(myData)
+        tempQueue
+      }
+      else {
+        myQueue
+      }
     }
   }
 
