@@ -140,7 +140,13 @@ object Main {
     var data = " "
     var dataList : List[Data] = List()
     var categoryNum = new Field(1)
+    var counter = new Field(0)
     var categoryCounter: Option[Int] = None
+    var queue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
+
+    //number of top k
+    val k = args(1).toInt
+
     //pop size
     var N = 0
     var myMap : Map[String,Int] = Map()
@@ -160,39 +166,21 @@ object Main {
         myMap.update(data, myMap(data)+1)
       }
       categoryNum.value = 1
+      queue = putStuffInQueue(queue, k, counter, dataInst)
       N = N+1
     }
 
-    val queue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
 
-    putStuffInQueue(queue, dataList)
-    //number of top k
-    val k = args(1).toInt
-
-    var topK = new Array[Data](k)
-
-
-    var index = new Field(0)
-
-    getTopK(queue, k, topK, index)
-
-    var HyperMap : Map[String,Float] = Map()
-
-    myMap.keys.foreach { i =>
-      HyperMap += (i -> HyperCalculate(N,myMap(i),i,k,topK))
-    }
-
-    for (i <-0 until topK.length){
-      println(topK(i).getScore())
+    for (i<- 0 until k){
+      println (queue.max(Ordering.by(greaterThan)).getScore())
+      queue.dequeue()
     }
 
     myMap.keys.foreach {i =>
       println("Keys: " + i)
       println("value: " + myMap(i))
-      println("hyperval: " + HyperMap(i))
+
     }
-
-
 
   }
 
