@@ -67,14 +67,14 @@ object Main {
     var cal2= cal/(Combination(numcatTopK)*Combination(catsizeX-numcatTopK)*Combination(numK-numcatTopK)*Combination(popSize-catsizeX-numK+numcatTopK)  )
   }
 */
-  def CatXinTopK(category: String, topK:Array[Data]):Unit = {
+  /*def CatXinTopK(category: String, topK:Array[Data]):Unit = {
     var count=0;
     for ( i <- 0 until topK.length) {
       if(topK(i).getCategory()==category)
         count=count+1
     }
     return count
-  }
+  }*/
   //returns combination of number
   def Combination(x: Int):Unit= {
     if (x<1)
