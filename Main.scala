@@ -32,7 +32,7 @@ object Main {
   def putStuffInQueue(myQueue: PriorityQueue[Data], k: Int, counter: Field[Int], myData: Data) : PriorityQueue[Data] = {
     if (counter.value < k) {
       myQueue.enqueue(myData)
-      counter.value = counter.value + 1
+      counter.value += 1
       myQueue
     }
     else {
