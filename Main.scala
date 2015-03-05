@@ -48,6 +48,8 @@ object Main {
   }
 
 
+
+
   //Hypergeometric distribution
 
   def HyperCalculate(popSize: Int, catsizeX:Int,category:String, numK:Int, topK:Array[Data]): Float = {
@@ -117,7 +119,10 @@ object Main {
     return result
   }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> GabbyMerge
 
   def main(args: Array[String]) : Unit = {
 
