@@ -156,31 +156,6 @@ object Main {
     }
 
 
-   /* var tonySucks = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
-    var testData = new Data()
-    testData.setCategory("Y")
-    testData.setScore(3.14)
-    tonySucks.enqueue(testData)
-    var testD = new Data()
-    testData.setCategory("X")
-    testData.setScore(13.37)
-
-    var blah = tonySucks.min(Ordering.by(greaterThan))
-    */
-
-
-    //var topK = new Array[Data](k)
-
-
-    //var index = new Field(0)
-
-    //getTopK(queue, k, topK, index)
-
-    /*for (i <-0 until topK.length){
-      println(topK(i).getScore())
-    }*/
-
-
     for (i<- 0 until k){
       println (queue.max(Ordering.by(greaterThan)).getScore())
       queue.dequeue()
