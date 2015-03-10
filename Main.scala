@@ -7,7 +7,7 @@ import scala.collection.mutable.PriorityQueue
 import scala.io.Source
 
 object Main {
-
+  
   class Field[T] (var value: T)
 
   def isNewCategory(myList: List[Data], x: String, field: Field[Int]): Unit = {
@@ -149,7 +149,8 @@ object Main {
 
     //pop size
     var N = 0
-    var myMap : Map[String,Int] = Map()
+    
+    var mapOfNumCat : Map[String,Int] = Map()
     for (line <- Source.fromFile(fileName).getLines()){
       var dataInst = new Data()
       data = line.split(" ")(0)
@@ -160,10 +161,10 @@ object Main {
 
       dataList = dataList :+ (dataInst)
       if (categoryNum.value == 1){
-        myMap += (data -> 1)
+        mapOfNumCat += (data -> 1)
       }
       else {
-        myMap.update(data, myMap(data)+1)
+        mapOfNumCat.update(data, mapOfNumCat(data)+1)
       }
       categoryNum.value = 1
       queue = putStuffInQueue(queue, k, counter, dataInst)
@@ -176,9 +177,9 @@ object Main {
       queue.dequeue()
     }
 
-    myMap.keys.foreach {i =>
+    mapOfNumCat.keys.foreach {i =>
       println("Keys: " + i)
-      println("value: " + myMap(i))
+      println("value: " + mapOfNumCat(i))
 
     }
 
