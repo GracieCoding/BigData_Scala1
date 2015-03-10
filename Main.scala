@@ -5,6 +5,7 @@
 import scala.collection.mutable.Map
 import scala.collection.mutable.PriorityQueue
 import scala.io.Source
+import scala.actors.Actor
 
 object Main {
 
@@ -30,23 +31,10 @@ object Main {
     }
   }*/
 
-  def putStuffInQueue(myQueue: PriorityQueue[Data], k: Int, counter: Field[Int], myData: Data) : PriorityQueue[Data] = {
-    if (counter.value < k) {
-      myQueue.enqueue(myData)
-      counter.value += 1
-      myQueue
-    }
-    else {
-      if (myData.getScore() > myQueue.min(Ordering.by(greaterThan)).getScore() ){
-        var tempQueue = myQueue.reverse
-        tempQueue.dequeue()
-        tempQueue = tempQueue.reverse
-        tempQueue.enqueue(myData)
-        tempQueue
-      }
-      else {
-        myQueue
-      }
+  def putStuffInQueue(myQueue: PriorityQueue[Data], myList: List[Data]) : Unit = {
+    if (!myList.isEmpty){
+      myQueue.enqueue(myList.head)
+      putStuffInQueue(myQueue, myList.tail)
     }
   }
 
@@ -59,8 +47,6 @@ object Main {
       getTopK(myQueue.tail, temp, arr, index)
     }
   }
-
-
 
   //Hypergeometric distribution
 
@@ -85,7 +71,6 @@ object Main {
       return -1
     else
       return recurCom(x,1)
-
   }
   def recurCom(x:Int, total:Int):Int = {
     if (x>1)
@@ -112,26 +97,24 @@ object Main {
     var l= left; var r=right
     while (!l.isEmpty && !r.isEmpty) {
       if (l.head.getScore() <= r.head.getScore() ){
-        result= l.head :: result
+        result= result :+ l.head
         l = l.tail
       } else {
-        result = r.head :: result
+        result = result :+ r.head
         r = r.tail
       }
     }
 
     while (!l.isEmpty){
-      result= l.head :: result
+      result= result :+ l.head
       l = l.tail
      }
     while (!r.isEmpty){
-      result = r.head :: result
+      result = result :+ r.head
       r = r.tail
     }
     return result
   }
-
-
 
 
   def main(args: Array[String]) : Unit = {
@@ -140,13 +123,7 @@ object Main {
     var data = " "
     var dataList : List[Data] = List()
     var categoryNum = new Field(1)
-    var counter = new Field(0)
     var categoryCounter: Option[Int] = None
-    var queue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
-
-    //number of top k
-    val k = args(1).toInt
-
     //pop size
     var N = 0
     var myMap : Map[String,Int] = Map()
@@ -166,19 +143,41 @@ object Main {
         myMap.update(data, myMap(data)+1)
       }
       categoryNum.value = 1
-      queue = putStuffInQueue(queue, k, counter, dataInst)
       N = N+1
     }
 
+    val queue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
 
-    for (i<- 0 until k){
-      println (queue.max(Ordering.by(greaterThan)).getScore())
-      queue.dequeue()
+    putStuffInQueue(queue, dataList)
+    //number of top k
+    val k = args(1).toInt
+
+    var topK = new Array[Data](k)
+
+
+    var index = new Field(0)
+
+    getTopK(queue, k, topK, index)
+
+    var HyperMap : List[Data] = List()
+
+    myMap.keys.foreach { i =>
+      var inst = new Data()
+      inst.setCategory(i)
+      inst.setScore(HyperCalculate(N,myMap(i),i,k,topK))
+      HyperMap= HyperMap:+inst
     }
 
-    myMap.keys.foreach {i =>
-      println("Keys: " + i)
-      println("value: " + myMap(i))
+    HyperMap= merge_sort(HyperMap)
+
+    for (i <-0 until topK.length){
+      println(topK(i).getScore())
+    }
+    println("hypermap")
+    HyperMap.foreach { i =>
+      println("Key: "+ i.getCategory())
+      println("Value: "+ myMap(i.getCategory()) )
+      println("hyperval: "+i.getScore())
 
     }
 
