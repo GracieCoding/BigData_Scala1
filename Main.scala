@@ -10,6 +10,7 @@ object Main {
   
   class Field[T] (var value: T)
 
+//Sees if a category is new or not
   def isNewCategory(myList: List[Data], x: String, field: Field[Int]): Unit = {
     if (!myList.isEmpty){
       if (myList.head.getCategory() == x) {
@@ -19,6 +20,7 @@ object Main {
     }
   }
 
+//Function to order the queue by
   def greaterThan(x: Data): Double = {
     x.getScore()
   }
