@@ -112,16 +112,16 @@ object Main {
     var l= left; var r=right
     while (!l.isEmpty && !r.isEmpty) {
       if (l.head.getScore() <= r.head.getScore() ){
-        result= l.head :: result
+        result= result::l.head
         l = l.tail
       } else {
-        result = r.head :: result
+        result = result::r.head
         r = r.tail
       }
     }
 
     while (!l.isEmpty){
-      result= l.head :: result
+      result= result::l.head
       l = l.tail
      }
     while (!r.isEmpty){
