@@ -1,5 +1,5 @@
 /**
- * Created by Grace & Gabriela.
+ * Created by Gabriela & Grace.
  */
 
 import scala.collection.mutable.Map
@@ -8,9 +8,10 @@ import scala.io.Source
 import scala.actors.Actor
 
 object Main {
-
+  
   class Field[T] (var value: T)
 
+//Sees if a category is new or not
   def isNewCategory(myList: List[Data], x: String, field: Field[Int]): Unit = {
     if (!myList.isEmpty){
       if (myList.head.getCategory() == x) {
@@ -20,6 +21,7 @@ object Main {
     }
   }
 
+//Function to order the queue by
   def greaterThan(x: Data): Double = {
     x.getScore()
   }
@@ -97,16 +99,16 @@ object Main {
     var l= left; var r=right
     while (!l.isEmpty && !r.isEmpty) {
       if (l.head.getScore() <= r.head.getScore() ){
-        result= result :+ l.head
+        result= result::l.head
         l = l.tail
       } else {
-        result = result :+ r.head
+        result = result::r.head
         r = r.tail
       }
     }
 
     while (!l.isEmpty){
-      result= result :+ l.head
+      result= result::l.head
       l = l.tail
      }
     while (!r.isEmpty){
@@ -126,7 +128,8 @@ object Main {
     var categoryCounter: Option[Int] = None
     //pop size
     var N = 0
-    var myMap : Map[String,Int] = Map()
+    
+    var mapOfNumCat : Map[String,Int] = Map()
     for (line <- Source.fromFile(fileName).getLines()){
       var dataInst = new Data()
       data = line.split(" ")(0)
@@ -137,10 +140,10 @@ object Main {
 
       dataList = dataList :+ (dataInst)
       if (categoryNum.value == 1){
-        myMap += (data -> 1)
+        mapOfNumCat += (data -> 1)
       }
       else {
-        myMap.update(data, myMap(data)+1)
+        mapOfNumCat.update(data, mapOfNumCat(data)+1)
       }
       categoryNum.value = 1
       N = N+1
@@ -161,7 +164,7 @@ object Main {
 
     var HyperMap : List[Data] = List()
 
-    myMap.keys.foreach { i =>
+    mapOfNumCat.keys.foreach { i =>
       var inst = new Data()
       inst.setCategory(i)
       inst.setScore(HyperCalculate(N,myMap(i),i,k,topK))
@@ -176,9 +179,8 @@ object Main {
     println("hypermap")
     HyperMap.foreach { i =>
       println("Key: "+ i.getCategory())
-      println("Value: "+ myMap(i.getCategory()) )
+      println("Value: "+ mapOfNumCat(i.getCategory()) )
       println("hyperval: "+i.getScore())
-
     }
 
   }
