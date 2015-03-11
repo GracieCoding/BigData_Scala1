@@ -219,7 +219,7 @@ object Main {
       }*/
       
       dataList = dataList :+ (dataInst)
-
+      queue = getTopK(queue, k, dataInst)
       N = N+1
 
     }
