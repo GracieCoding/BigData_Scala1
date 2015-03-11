@@ -6,12 +6,13 @@ import scala.collection.mutable.Map
 import scala.collection.mutable.PriorityQueue
 import scala.io.Source
 import scala.actors.Actor
+import scala.actors.Actor._
 
 object Main {
-  
+
   class Field[T] (var value: T)
 
-//Sees if a category is new or not
+  //Sees if a category is new or not
   def isNewCategory(myList: List[Data], x: String, field: Field[Int]): Unit = {
     if (!myList.isEmpty){
       if (myList.head.getCategory() == x) {
@@ -21,7 +22,7 @@ object Main {
     }
   }
 
-//Function to order the queue by
+  //Function to order the queue by
   def greaterThan(x: Data): Double = {
     x.getScore()
   }
@@ -50,12 +51,27 @@ object Main {
     }
   }
 
+  class HypActor extends Actor {
+    def act {
+      while(true) {
+        receive {
+          case (x: Int, y: Int, z: String, w: Int, v: Array[Data]) =>
+            sender ! ( HyperCalculate(x, y, z, w, v) , z )
+            exit()
+          case _ => println("what the fuck is this info you gave me, inside actor")
+        }
+      }
+    }
+  }
+
   //Hypergeometric distribution
 
-  def HyperCalculate(popSize: Int, catsizeX:Int,category:String, numK:Int, topK:Array[Data]): Float = {
+  def HyperCalculate(popSize: Int, catsizeX:Int,category:String, numK:Int, topK:Array[Data]): BigDecimal = {
     val numcatTopK= CatXinTopK(category, topK)
-    var caltop:Float = Combination(catsizeX) * Combination(popSize-catsizeX) * Combination(popSize-numK) * Combination(numK)
-    var calbot: Float = Combination(popSize) * Combination(numcatTopK) * Combination(catsizeX-numcatTopK) * Combination(numK-numcatTopK)*Combination(popSize-catsizeX-numK+numcatTopK)
+
+    var caltop: BigDecimal = Combination(catsizeX) * Combination(popSize-catsizeX) * Combination(popSize-numK) * Combination(numK)
+    var calbot: BigDecimal = Combination(popSize) * Combination(numcatTopK) * Combination(catsizeX-numcatTopK) * Combination(numK-numcatTopK)*Combination(popSize-catsizeX-numK+numcatTopK)
+
     return caltop/calbot
   }
 
@@ -68,13 +84,13 @@ object Main {
     return count
   }
   //returns combination of number
-  def Combination(x: Int):Int= {
+  def Combination(x: Int):BigDecimal= {
     if (x<0)
       return -1
     else
       return recurCom(x,1)
   }
-  def recurCom(x:Int, total:Int):Int = {
+  def recurCom(x:Int, total:Int):BigDecimal = {
     if (x>1)
       recurCom(x-1, total*x)
     else
@@ -82,35 +98,35 @@ object Main {
   }
 
 
-//look at List on web and find length func name
-  def merge_sort(m: List[Data]): List[Data] = {
-   if (m.length <= 1)
-     return m
-   var (left, right) = m.splitAt(m.length / 2)
+  //look at List on web and find length func name
+  def merge_sort(m: List[BData]): List[BData] = {
+    if (m.length <= 1)
+      return m
+    var (left, right) = m.splitAt(m.length / 2)
 
-   left = merge_sort(left)
-   right = merge_sort(right)
+    left = merge_sort(left)
+    right = merge_sort(right)
 
-   merge(left, right)
+    merge(left, right)
   }
 
-  def merge(left: List[Data], right: List[Data]):List[Data] = {
-    var result= List[Data]()
+  def merge(left: List[BData], right: List[BData]):List[BData] = {
+    var result= List[BData]()
     var l= left; var r=right
     while (!l.isEmpty && !r.isEmpty) {
       if (l.head.getScore() <= r.head.getScore() ){
-        result= result::l.head
+        result= result:+l.head
         l = l.tail
       } else {
-        result = result::r.head
+        result = result:+r.head
         r = r.tail
       }
     }
 
     while (!l.isEmpty){
-      result= result::l.head
+      result= result:+l.head
       l = l.tail
-     }
+    }
     while (!r.isEmpty){
       result = result :+ r.head
       r = r.tail
@@ -121,16 +137,16 @@ object Main {
 
   def main(args: Array[String]) : Unit = {
 
+    val me= self
     val fileName = args(0)
     var data = " "
-    var dataList : List[Data] = List()
+    var dataList: List[Data] = List()
     var categoryNum = new Field(1)
-    var categoryCounter: Option[Int] = None
     //pop size
     var N = 0
-    
-    var mapOfNumCat : Map[String,Int] = Map()
-    for (line <- Source.fromFile(fileName).getLines()){
+
+    var mapOfNumCat: Map[String, Int] = Map()
+    for (line <- Source.fromFile(fileName).getLines()) {
       var dataInst = new Data()
       data = line.split(" ")(0)
       dataInst.setScore(data.toDouble)
@@ -139,14 +155,14 @@ object Main {
       isNewCategory(dataList, data, categoryNum);
 
       dataList = dataList :+ (dataInst)
-      if (categoryNum.value == 1){
+      if (categoryNum.value == 1) {
         mapOfNumCat += (data -> 1)
       }
       else {
-        mapOfNumCat.update(data, mapOfNumCat(data)+1)
+        mapOfNumCat.update(data, mapOfNumCat(data) + 1)
       }
       categoryNum.value = 1
-      N = N+1
+      N = N + 1
     }
 
     val queue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
@@ -157,18 +173,29 @@ object Main {
 
     var topK = new Array[Data](k)
 
-
     var index = new Field(0)
 
     getTopK(queue, k, topK, index)
 
-    var HyperMap : List[Data] = List()
+    var HyperMap: List[BData] = List()
+    var Hactors: List[HypActor] = List()
 
     mapOfNumCat.keys.foreach { i =>
-      var inst = new Data()
-      inst.setCategory(i)
-      inst.setScore(HyperCalculate(N,myMap(i),i,k,topK))
-      HyperMap= HyperMap:+inst
+      var actor = new HypActor
+      actor.start
+      Hactors = Hactors :+ actor
+      actor ! (N, mapOfNumCat(i), i, k, topK)
+    }
+
+    while (HyperMap.size < mapOfNumCat.size){
+      receive {
+        case (x: BigDecimal, z: String) =>
+          var inst = new BData()
+          inst.setCategory(z)
+          inst.setScore(x)
+          HyperMap= HyperMap :+ inst
+        case _ => println("wtf inside actor receiving ")
+      }
     }
 
     HyperMap= merge_sort(HyperMap)
@@ -176,7 +203,7 @@ object Main {
     for (i <-0 until topK.length){
       println(topK(i).getScore())
     }
-    println("hypermap")
+    println("hypermap size:"+HyperMap.size)
     HyperMap.foreach { i =>
       println("Key: "+ i.getCategory())
       println("Value: "+ mapOfNumCat(i.getCategory()) )
