@@ -10,50 +10,54 @@ import scala.actors.Actor._
 object Main {
 
   class Field[T] (var value: T)
-  
+
   class readingInput( ) extends Actor{
     def act() = loop{
       react{
-        case (mapOfNumCat: Map[String, Int], data:Data, myQueue: PriorityQueue[Data], myList: List[Data]) =>{
-          if (isNewCategory(myList, data.getCategory())) {
+        case (mapOfNumCat: Map[String, Int], data:Data, myQueue: PriorityQueue[Data]) =>{
+          if (!mapOfNumCat.contains(data.getCategory())) {
             mapOfNumCat += (data.getCategory() -> 1)
           }
           else {
             mapOfNumCat.update(data.getCategory(), mapOfNumCat(data.getCategory())+1)
           }
+        }
+        /*case (x: String, data: Data){
+
+      }*/
       }
     }
   }
-}
 
   //Sees if a category is new or not
 
-  def isNewCategory(myList: List[Data], x: String): Boolean = {
-    if (!myList.isEmpty){
-      println(myList.head.getCategory() + "compare to " + x)
-      if (myList.head.getCategory() == x) {
+  /*def isNewCategory(mapOfNumCat: Map[String,Int], x: String): Boolean = {
+    if (!mapOfNumCat.isEmpty){
+      mapOfNumCat.head.
+      println(mapOfNumCat.head.getCategory() + "compare to " + x)
+      if (mapOfNumCat.head.getCategory() == x) {
         false
       }
       else {
-        isNewCategory(myList.tail, x)
+        isNewCategory(mapOfNumCat.tail, x)
       }
     }
     else{
       true
     }
-  }
+  }*/
 
   //Function to order the queue by
-  def greaterThan(x: Data): Double = {
+  def greaterThan(x: Data): BigDecimal = {
     x.getScore()
   }
 
-  /*def printQueue(myQueue: PriorityQueue[Data]): Unit ={
+  def printQueue(myQueue: PriorityQueue[Data]): Unit ={
     if (!myQueue.isEmpty){
       println(myQueue.head.getScore())
       printQueue(myQueue.tail)
     }
-  }*/
+  }
 
 
 
@@ -75,9 +79,14 @@ object Main {
       if (temp.getScore() < data.getScore()) {
         var  newQueue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
         if (!myQueue.isEmpty) {
-          newQueue= myQueue.dropRight(1)
+          printQueue(myQueue)
+          val it = Iterator(myQueue)
+          newQueue = myQueue.filter(it => it != myQueue.min(Ordering.by(greaterThan)))
+
         }
         newQueue += data
+        printQueue(newQueue)
+        newQueue
       }
       else {
         myQueue
@@ -139,7 +148,7 @@ object Main {
 
   //look at List on web and find length func name
 
-  def merge_sort(m: List[BData]): List[BData] = {
+  def merge_sort(m: List[Data]): List[Data] = {
     if (m.length <= 1)
       return m
     var (left, right) = m.splitAt(m.length / 2)
@@ -150,8 +159,8 @@ object Main {
     merge(left, right)
   }
 
-  def merge(left: List[BData], right: List[BData]):List[BData] = {
-    var result= List[BData]()
+  def merge(left: List[Data], right: List[Data]):List[Data] = {
+    var result= List[Data]()
     var l= left; var r=right
     while (!l.isEmpty && !r.isEmpty) {
       if (l.head.getScore() <= r.head.getScore() ){
@@ -172,7 +181,7 @@ object Main {
       r = r.tail
     }
     return result
-  }*/
+  }
 
 
   def main(args: Array[String]) : Unit = {
@@ -181,7 +190,7 @@ object Main {
     val fileName = args(0)
     var data = " "
     var dataList: List[Data] = List()
-  
+
     //pop size
     var N = 0
     var queue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
@@ -199,38 +208,38 @@ object Main {
       dataInst.setCategory(data)
       println("Data: " + data)
 
-    /*var mapOfNumCat : Map[String,Int] = Map()
-    for (line <- Source.fromFile(fileName).getLines()){
-      var dataInst = new Data()
-      data = line.split(" ")(0)
-      dataInst.setScore(data.toDouble)
-      data = line.split(" ")(1)
-      dataInst.setCategory(data)
+      /*var mapOfNumCat : Map[String,Int] = Map()
+      for (line <- Source.fromFile(fileName).getLines()){
+        var dataInst = new Data()
+        data = line.split(" ")(0)
+        dataInst.setScore(data.toDouble)
+        data = line.split(" ")(1)
+        dataInst.setCategory(data)
 
-      println("Data: " + data)
-      println(isNewCategory(dataList, data))
-      if (isNewCategory(dataList, data)){
-        println("running")
-        mapOfNumCat += (data -> 1)
-      }
-      else {
-        println("wtf")
-        mapOfNumCat.update(data, mapOfNumCat(data)+1)
-      }*/
-      
+        println("Data: " + data)
+        println(isNewCategory(dataList, data))
+        if (isNewCategory(dataList, data)){
+          println("running")
+          mapOfNumCat += (data -> 1)
+        }
+        else {
+          println("wtf")
+          mapOfNumCat.update(data, mapOfNumCat(data)+1)
+        }*/
+
       dataList = dataList :+ (dataInst)
       queue = getTopK(queue, k, dataInst)
       N = N+1
-
     }
 
-
+    println("Printing queue: ")
+    printQueue(queue)
 
     var topK = new Array[Data](k)
 
-    var HyperMap: List[BData] = List()
+    var HyperMap: List[Data] = List()
     var Hactors: List[HypActor] = List()
-
+    println("pause test")
     mapOfNumCat.keys.foreach { i =>
       var actor = new HypActor
       actor.start
@@ -241,7 +250,7 @@ object Main {
     while (HyperMap.size < mapOfNumCat.size){
       receive {
         case (x: BigDecimal, z: String) =>
-          var inst = new BData()
+          var inst = new Data()
           inst.setCategory(z)
           inst.setScore(x)
           HyperMap= HyperMap :+ inst
@@ -249,7 +258,7 @@ object Main {
       }
     }
 
-    HyperMap= merge_sort(HyperMap)
+    //HyperMap= merge_sort(HyperMap)
 
     for (i <-0 until topK.length){
       println(topK(i).getScore())
@@ -259,7 +268,7 @@ object Main {
       println("Key: "+ i.getCategory())
       println("Value: "+ mapOfNumCat(i.getCategory()) )
       println("hyperval: "+i.getScore())
-    }*/
+    }
 
   }
 
