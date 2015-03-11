@@ -10,6 +10,21 @@ import scala.actors.Actor._
 object Main {
 
   class Field[T] (var value: T)
+  
+  class readingInput( ) extends Actor{
+    def act() = loop{
+      react{
+        case (mapOfNumCat: Map[String, Int], data:Data, myQueue: PriorityQueue[Data], myList: List[Data]) =>{
+          if (isNewCategory(myList, data.getCategory())) {
+            mapOfNumCat += (data.getCategory() -> 1)
+          }
+          else {
+            mapOfNumCat.update(data.getCategory(), mapOfNumCat(data.getCategory())+1)
+          }
+      }
+    }
+  }
+}
 
   //Sees if a category is new or not
 
@@ -40,14 +55,9 @@ object Main {
     }
   }*/
 
-  def putStuffInQueue(myQueue: PriorityQueue[Data], myList: List[Data]) : Unit = {
-    if (!myList.isEmpty){
-      myQueue.enqueue(myList.head)
-      putStuffInQueue(myQueue, myList.tail)
-    }
-  }
 
-  def getTopK(myQueue: PriorityQueue[Data], k: Int, arr:Array[Data], index: Field[Int]) : Unit = {
+
+  /*def getTopK(myQueue: PriorityQueue[Data], k: Int, arr:Array[Data], index: Field[Int]) : Unit = {
     var temp = k;
     if (k > 0){
       temp = temp-1
@@ -55,7 +65,30 @@ object Main {
       index.value = index.value + 1
       getTopK(myQueue.tail, temp, arr, index)
     }
+  }*/
+  def getTopK(myQueue: PriorityQueue[Data], k: Int, data: Data) : PriorityQueue[Data] = {
+    println("Queue size: "+ myQueue.size)
+    if (myQueue.size == k){
+      var temp = myQueue.min(Ordering.by(greaterThan))
+      println("last: " + temp.getScore())
+      println("data: " + data.getScore())
+      if (temp.getScore() < data.getScore()) {
+        var  newQueue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
+        if (!myQueue.isEmpty) {
+          newQueue= myQueue.dropRight(1)
+        }
+        newQueue += data
+      }
+      else {
+        myQueue
+      }
+    }
+    else {
+      myQueue += data
+      myQueue
+    }
   }
+
 
   class HypActor extends Actor {
     def act {
@@ -148,11 +181,25 @@ object Main {
     val fileName = args(0)
     var data = " "
     var dataList: List[Data] = List()
-    var categoryNum = new Field(1)
+  
     //pop size
     var N = 0
-
+    var queue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
+    //number of top k
+    val k = args(1).toInt
     var mapOfNumCat : Map[String,Int] = Map()
+    var actor =  new readingInput()
+
+    actor.start
+    for (line <- Source.fromFile(fileName).getLines()){
+      var dataInst = new Data()
+      data = line.split(" ")(0)
+      dataInst.setScore(data.toDouble)
+      data = line.split(" ")(1)
+      dataInst.setCategory(data)
+      println("Data: " + data)
+
+    /*var mapOfNumCat : Map[String,Int] = Map()
     for (line <- Source.fromFile(fileName).getLines()){
       var dataInst = new Data()
       data = line.split(" ")(0)
@@ -169,7 +216,8 @@ object Main {
       else {
         println("wtf")
         mapOfNumCat.update(data, mapOfNumCat(data)+1)
-      }
+      }*/
+      
       dataList = dataList :+ (dataInst)
 
       N = N+1
@@ -178,16 +226,8 @@ object Main {
 
     val queue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
 
-    putStuffInQueue(queue, dataList)
-
-    //number of top k
-    val k = args(1).toInt
 
     var topK = new Array[Data](k)
-
-    var index = new Field(0)
-
-    getTopK(queue, k, topK, index)
 
     var HyperMap: List[BData] = List()
     var Hactors: List[HypActor] = List()
