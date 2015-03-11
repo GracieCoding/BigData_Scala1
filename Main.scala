@@ -2,26 +2,31 @@
  * Created by Gabriela & Grace.
  */
 
-import scala.collection.mutable.Map
-import scala.collection.mutable.PriorityQueue
+import scala.collection.mutable.{Map, PriorityQueue}
 import scala.io.Source
-import scala.actors.Actor
+
 
 object Main {
-  
+
   class Field[T] (var value: T)
 
-//Sees if a category is new or not
-  def isNewCategory(myList: List[Data], x: String, field: Field[Int]): Unit = {
+  //Sees if a category is new or not
+  def isNewCategory(myList: List[Data], x: String): Boolean = {
     if (!myList.isEmpty){
+      println(myList.head.getCategory() + "compare to " + x)
       if (myList.head.getCategory() == x) {
-        field.value = 0
+        false
       }
-      isNewCategory(myList.tail, x, field)
+      else {
+        isNewCategory(myList.tail, x)
+      }
+    }
+    else{
+      true
     }
   }
 
-//Function to order the queue by
+  //Function to order the queue by
   def greaterThan(x: Data): Double = {
     x.getScore()
   }
@@ -82,16 +87,16 @@ object Main {
   }
 
 
-//look at List on web and find length func name
-  def merge_sort(m: List[Data]): List[Data] = {
-   if (m.length <= 1)
-     return m
-   var (left, right) = m.splitAt(m.length / 2)
+  //look at List on web and find length func name
+  /*def merge_sort(m: List[Data]): List[Data] = {
+    if (m.length <= 1)
+      return m
+    var (left, right) = m.splitAt(m.length / 2)
 
-   left = merge_sort(left)
-   right = merge_sort(right)
+    left = merge_sort(left)
+    right = merge_sort(right)
 
-   merge(left, right)
+    merge(left, right)
   }
 
   def merge(left: List[Data], right: List[Data]):List[Data] = {
@@ -110,13 +115,13 @@ object Main {
     while (!l.isEmpty){
       result= result::l.head
       l = l.tail
-     }
+    }
     while (!r.isEmpty){
       result = result :+ r.head
       r = r.tail
     }
     return result
-  }
+  }*/
 
 
   def main(args: Array[String]) : Unit = {
@@ -128,7 +133,7 @@ object Main {
     var categoryCounter: Option[Int] = None
     //pop size
     var N = 0
-    
+
     var mapOfNumCat : Map[String,Int] = Map()
     for (line <- Source.fromFile(fileName).getLines()){
       var dataInst = new Data()
@@ -136,22 +141,25 @@ object Main {
       dataInst.setScore(data.toDouble)
       data = line.split(" ")(1)
       dataInst.setCategory(data)
-      isNewCategory(dataList, data, categoryNum);
-
-      dataList = dataList :+ (dataInst)
-      if (categoryNum.value == 1){
+      println("Data: " + data)
+      println(isNewCategory(dataList, data))
+      if (isNewCategory(dataList, data)){
+        println("running")
         mapOfNumCat += (data -> 1)
       }
       else {
+        println("wtf")
         mapOfNumCat.update(data, mapOfNumCat(data)+1)
       }
-      categoryNum.value = 1
+      dataList = dataList :+ (dataInst)
+
       N = N+1
     }
 
     val queue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
 
     putStuffInQueue(queue, dataList)
+
     //number of top k
     val k = args(1).toInt
 
@@ -164,24 +172,31 @@ object Main {
 
     var HyperMap : List[Data] = List()
 
-    mapOfNumCat.keys.foreach { i =>
+    /*mapOfNumCat.keys.foreach { i =>
       var inst = new Data()
       inst.setCategory(i)
-      inst.setScore(HyperCalculate(N,myMap(i),i,k,topK))
+      inst.setScore(HyperCalculate(N,mapOfNumCat(i),i,k,topK))
       HyperMap= HyperMap:+inst
-    }
+    }*/
 
-    HyperMap= merge_sort(HyperMap)
+    //HyperMap= merge_sort(HyperMap)
 
     for (i <-0 until topK.length){
       println(topK(i).getScore())
     }
-    println("hypermap")
+
+    println("Gracie's map")
+    mapOfNumCat.keys.foreach{ i =>
+      println("Key: " + i)
+      println("value: " +mapOfNumCat(i))
+    }
+
+    /*println("hypermap")
     HyperMap.foreach { i =>
       println("Key: "+ i.getCategory())
       println("Value: "+ mapOfNumCat(i.getCategory()) )
       println("hyperval: "+i.getScore())
-    }
+    }*/
 
   }
 
