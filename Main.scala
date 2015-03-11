@@ -224,7 +224,6 @@ object Main {
 
     }
 
-    val queue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
 
 
     var topK = new Array[Data](k)
