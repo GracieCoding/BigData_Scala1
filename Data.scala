@@ -40,7 +40,7 @@ class BData {
     category
   }
 
-  def setScore(x: BigDecimal) : BigDecimal = {
+  def setScore(x: BigDecimal) : Unit = {
     score = x;
   }
 
