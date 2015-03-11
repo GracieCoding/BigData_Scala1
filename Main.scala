@@ -2,8 +2,7 @@
  * Created by Gabriela & Grace.
  */
 
-import scala.collection.mutable.Map
-import scala.collection.mutable.PriorityQueue
+import scala.collection.mutable.{Map, PriorityQueue}
 import scala.io.Source
 import scala.actors.Actor
 import scala.actors.Actor._
@@ -13,12 +12,19 @@ object Main {
   class Field[T] (var value: T)
 
   //Sees if a category is new or not
-  def isNewCategory(myList: List[Data], x: String, field: Field[Int]): Unit = {
+
+  def isNewCategory(myList: List[Data], x: String): Boolean = {
     if (!myList.isEmpty){
+      println(myList.head.getCategory() + "compare to " + x)
       if (myList.head.getCategory() == x) {
-        field.value = 0
+        false
       }
-      isNewCategory(myList.tail, x, field)
+      else {
+        isNewCategory(myList.tail, x)
+      }
+    }
+    else{
+      true
     }
   }
 
@@ -99,6 +105,7 @@ object Main {
 
 
   //look at List on web and find length func name
+
   def merge_sort(m: List[BData]): List[BData] = {
     if (m.length <= 1)
       return m
@@ -132,7 +139,7 @@ object Main {
       r = r.tail
     }
     return result
-  }
+  }*/
 
 
   def main(args: Array[String]) : Unit = {
@@ -145,29 +152,34 @@ object Main {
     //pop size
     var N = 0
 
-    var mapOfNumCat: Map[String, Int] = Map()
-    for (line <- Source.fromFile(fileName).getLines()) {
+    var mapOfNumCat : Map[String,Int] = Map()
+    for (line <- Source.fromFile(fileName).getLines()){
       var dataInst = new Data()
       data = line.split(" ")(0)
       dataInst.setScore(data.toDouble)
       data = line.split(" ")(1)
       dataInst.setCategory(data)
-      isNewCategory(dataList, data, categoryNum);
 
-      dataList = dataList :+ (dataInst)
-      if (categoryNum.value == 1) {
+      println("Data: " + data)
+      println(isNewCategory(dataList, data))
+      if (isNewCategory(dataList, data)){
+        println("running")
         mapOfNumCat += (data -> 1)
       }
       else {
-        mapOfNumCat.update(data, mapOfNumCat(data) + 1)
+        println("wtf")
+        mapOfNumCat.update(data, mapOfNumCat(data)+1)
       }
-      categoryNum.value = 1
-      N = N + 1
+      dataList = dataList :+ (dataInst)
+
+      N = N+1
+
     }
 
     val queue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
 
     putStuffInQueue(queue, dataList)
+
     //number of top k
     val k = args(1).toInt
 
@@ -203,12 +215,12 @@ object Main {
     for (i <-0 until topK.length){
       println(topK(i).getScore())
     }
-    println("hypermap size:"+HyperMap.size)
+
     HyperMap.foreach { i =>
       println("Key: "+ i.getCategory())
       println("Value: "+ mapOfNumCat(i.getCategory()) )
       println("hyperval: "+i.getScore())
-    }
+    }*/
 
   }
 
