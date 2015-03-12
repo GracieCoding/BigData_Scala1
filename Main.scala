@@ -10,69 +10,6 @@ import scala.io.Source
 
 object Main {
 
-  class Field[T] (var value: T)
-
-  class readingInput(k: Int) extends Actor{
-    var myHeap = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
-    var dataInst = new Data()
-    var counter = 0
-    def act() = loop{
-      react  {
-        case (score: Double, cat: String) => {
-          println("im here")
-          dataInst.setScore(score)
-          dataInst.setCategory(cat)
-          if (isFull(counter, k)){
-            val it = Iterator(myHeap)
-            myHeap = myHeap.filter(it => it != myHeap.min(Ordering.by(greaterThan)))
-            counter += 1
-          }
-          else {
-            myHeap += dataInst
-            counter += 1
-          }
-        }
-
-        case (mapOfNumCat: Map[String, Int], category: String) =>{
-
-        }
-        /*case (false) =>{
-          println("false")
-          println("printing heap: ")
-          myHeap += dataInst
-          printQueue(myHeap)
-        }
-        case (true) => {
-
-          printQueue(myHeap)
-        }*/
-        case ("print") =>  {
-          println(myHeap.size)
-          println("printing heap: ")
-          printQueue(myHeap)
-        }
-      }
-    }
-  }
-
-  //Sees if a category is new or not
-
-  /*def isNewCategory(mapOfNumCat: Map[String,Int], x: String): Boolean = {
-    if (!mapOfNumCat.isEmpty){
-      mapOfNumCat.head.
-      println(mapOfNumCat.head.getCategory() + "compare to " + x)
-      if (mapOfNumCat.head.getCategory() == x) {
-        false
-      }
-      else {
-        isNewCategory(mapOfNumCat.tail, x)
-      }
-    }
-    else{
-      true
-    }
-  }*/
-
   //Function to order the queue by
   def greaterThan(x: Data): BigDecimal = {
     x.getScore()
@@ -84,20 +21,6 @@ object Main {
       printQueue(myQueue.tail)
     }
   }
-
-
-
-  /*def getTopK(myQueue: PriorityQueue[Data], k: Int, arr:Array[Data], index: Field[Int]) : Unit = {
-    var temp = k;
-    if (k > 0){
-      temp = temp-1
-      arr(index.value) = myQueue.head
-      index.value = index.value + 1
-      getTopK(myQueue.tail, temp, arr, index)
-    }
-  }*/
-
-
 
   def isFull(counter: Int, k: Int) : Boolean = {
     if (counter >= k){
@@ -245,8 +168,6 @@ object Main {
               myHeap += dataInst
               counter += 1
             }
-            println("printing heap: ")
-            printQueue(myHeap)
           }
           case "heap" => moi ! myHeap
           case "map" => moi ! mapOfNumCat
