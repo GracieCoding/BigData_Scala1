@@ -7,6 +7,7 @@ import scala.io.Source
 import scala.actors.Actor
 import scala.actors.Actor._
 
+
 object Main {
 
   class Field[T] (var value: T)
@@ -156,7 +157,6 @@ object Main {
       while(H || M){
         receive {
           case "start" =>
-            println("start")
             slave1.start()
             s2.start()
             Hrec.start()
@@ -168,7 +168,8 @@ object Main {
                 s2 ! (line,Hrec,Mrec)
               count+=1
             }
-            self ! "wait"
+            self ! "Hwait"
+            self ! "Mwait"
           case (x:PriorityQueue[(Data)]) =>
             parent ! x
             H=false
@@ -177,15 +178,21 @@ object Main {
             parent ! x
             M=false
             Mrec ! "exit"
-          case "wait" =>
+          case "Hwait" =>
             Hrec ! count
-          case false =>
-            self ! "wait"
-          case true =>
-            Mrec ! "done"
+          case "Mwait" =>
+            Mrec ! count
+          case "Hfalse" =>
+            self ! "Hwait"
+          case "Mfalse" =>
+            self ! "Mwait"
+          case "Htrue" =>
             Hrec ! "done"
             slave1 ! "exit"
             s2 ! "exit"
+          case "Mtrue" =>
+            Mrec ! "done"
+            parent ! count
           case _ => println("dunno what happend master read actor")
         }
       }
@@ -213,9 +220,9 @@ object Main {
             }
           case (x:Int) =>
             if(x==size)
-              sender ! true
+              sender ! "Htrue"
             else
-              sender ! false
+              sender ! "Hfalse"
           case "done" =>
             sender ! myHeap
           case "exit" => exit()
@@ -235,6 +242,14 @@ object Main {
               myMap += (x.getCategory() -> 1)
             else
               myMap.update(x.getCategory(), myMap(x.getCategory())+1)
+          case (x:Int) =>
+            var result: Int =0
+            myMap.keys.foreach {i =>
+              result+=myMap(i)}
+            if(x==result)
+              sender ! "Mtrue"
+            else
+              sender ! "Mfalse"
           case "done" => sender ! myMap
           case "exit" => exit()
         }
@@ -242,7 +257,7 @@ object Main {
     }
   }
 
-  //processes line from master and sends it to the map and priority queue recievers 
+  //processes line from master and sends it to the map and priority queue recievers
   class readActor extends Actor {
     var count=0
     var me = self
@@ -294,12 +309,13 @@ object Main {
 
     while(h || m)
     receive {
+      case (x:Int) =>
+        //popsize update
+        N=x
       case (x:PriorityQueue[(Data)]) =>
-        println("Recieved priority queue")
         queue=x
         h=false
       case (y:Map[String, Int]) =>
-        println("Recieved map")
         mapOfNumCat=y
         m=false
     }
@@ -335,8 +351,8 @@ object Main {
 
     HyperMap= merge_sort(HyperMap)
 
-    for (i <-0 until topK.length){
-      println(topK(i).getScore())
+    while ( !queue.isEmpty ){
+      println(queue.dequeue().getScore())
     }
     println("hypermap size:"+HyperMap.size)
     HyperMap.foreach { i =>
@@ -348,3 +364,4 @@ object Main {
   }
 
 }
+
