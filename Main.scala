@@ -12,25 +12,27 @@ object Main {
   class Field[T] (var value: T)
 
   //Sees if a category is new or not
-
-  def isNewCategory(myList: List[Data], x: String): Boolean = {
+  def isNewCategory(myList: List[Data], x: String, field: Field[Int]): Unit = {
     if (!myList.isEmpty){
-      println(myList.head.getCategory() + "compare to " + x)
       if (myList.head.getCategory() == x) {
-        false
+        field.value = 0
       }
-      else {
-        isNewCategory(myList.tail, x)
-      }
-    }
-    else{
-      true
+      isNewCategory(myList.tail, x, field)
     }
   }
 
   //Function to order the queue by
   def greaterThan(x: Data): Double = {
     x.getScore()
+  }
+
+  def isFull(counter: Int, k: Int) : Boolean = {
+    if (counter >= k){
+      true
+    }
+    else {
+      false
+    }
   }
 
   /*def printQueue(myQueue: PriorityQueue[Data]): Unit ={
@@ -105,7 +107,6 @@ object Main {
 
 
   //look at List on web and find length func name
-
   def merge_sort(m: List[BData]): List[BData] = {
     if (m.length <= 1)
       return m
@@ -139,7 +140,136 @@ object Main {
       r = r.tail
     }
     return result
-  }*/
+  }
+
+
+  //actor creates slave actors that do the work, waits till they send back result to terminate
+  class readMaster(filename:String, k:Int, parent:Actor) extends Actor{
+    def act {
+      var me =self
+      var slave1 =new readActor
+      var s2 = new readActor
+      val Hrec= new recieveHActor(k)
+      val Mrec= new recieveMActor
+      var count= 0
+      var H, M =true;
+      while(H || M){
+        receive {
+          case "start" =>
+            println("start")
+            slave1.start()
+            s2.start()
+            Hrec.start()
+            Mrec.start()
+            for(line <- Source.fromFile(filename).getLines()){
+              if(count%2==0)
+                slave1 ! (line,Hrec,Mrec)
+              else
+                s2 ! (line,Hrec,Mrec)
+              count+=1
+            }
+            self ! "wait"
+          case (x:PriorityQueue[(Data)]) =>
+            parent ! x
+            H=false
+            Hrec ! "exit"
+          case (x:Map[String,Int]) =>
+            parent ! x
+            M=false
+            Mrec ! "exit"
+          case "wait" =>
+            Hrec ! count
+          case false =>
+            self ! "wait"
+          case true =>
+            Mrec ! "done"
+            Hrec ! "done"
+            slave1 ! "exit"
+            s2 ! "exit"
+          case _ => println("dunno what happend master read actor")
+        }
+      }
+    }
+  }
+
+  //Priorty queue listener, reports back to master when "done" ie local size = master count
+  class recieveHActor(k:Int) extends Actor {
+    def act {
+      var me =self
+      var myHeap = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
+      var size =0
+      while(true){
+        receive {
+          case (x:Data) =>
+            if (isFull(size, k)){
+              val it = Iterator(myHeap)
+              myHeap = myHeap.filter(it => it != myHeap.min(Ordering.by(greaterThan)))
+              myHeap += x
+              size += 1
+            }
+            else {
+              myHeap += x
+              size += 1
+            }
+          case (x:Int) =>
+            if(x==size)
+              sender ! true
+            else
+              sender ! false
+          case "done" =>
+            sender ! myHeap
+          case "exit" => exit()
+        }
+      }
+    }
+  }
+
+  //Map reciever Actor, reports back to master when "done" as soon as Hactor is done
+  class recieveMActor extends Actor {
+    var myMap: Map[String, Int] = Map()
+    def act {
+      while (true) {
+        receive {
+          case (x:Data) =>
+            if (!myMap.contains(x.getCategory()))
+              myMap += (x.getCategory() -> 1)
+            else
+              myMap.update(x.getCategory(), myMap(x.getCategory())+1)
+          case "done" => sender ! myMap
+          case "exit" => exit()
+        }
+      }
+    }
+  }
+
+  //processes line from master and sends it to the map and priority queue recievers 
+  class readActor extends Actor {
+    var count=0
+    var me = self
+    def act {
+      while(true){
+        receive {
+          case (line:String, h:Actor, m:Actor ) =>
+            var dataInst = new Data()
+            var data = line.split(" ")(0)
+            dataInst.setScore(data.toDouble)
+            data = line.split(" ")(1)
+            dataInst.setCategory(data)
+            count+=1
+            h ! dataInst
+            m ! dataInst
+          case (line:Int) =>
+            if (line/2 == count)
+              sender ! true
+            else
+              sender ! false
+          case "exit" => exit()
+          case _ => println("dunno what happend read actor")
+
+        }
+      }
+    }
+  }
 
 
   def main(args: Array[String]) : Unit = {
@@ -151,37 +281,30 @@ object Main {
     var categoryNum = new Field(1)
     //pop size
     var N = 0
+    val k= args(1).toInt
 
-    var mapOfNumCat : Map[String,Int] = Map()
-    for (line <- Source.fromFile(fileName).getLines()){
-      var dataInst = new Data()
-      data = line.split(" ")(0)
-      dataInst.setScore(data.toDouble)
-      data = line.split(" ")(1)
-      dataInst.setCategory(data)
 
-      println("Data: " + data)
-      println(isNewCategory(dataList, data))
-      if (isNewCategory(dataList, data)){
-        println("running")
-        mapOfNumCat += (data -> 1)
-      }
-      else {
-        println("wtf")
-        mapOfNumCat.update(data, mapOfNumCat(data)+1)
-      }
-      dataList = dataList :+ (dataInst)
+    var Mactor= new readMaster(fileName,k,self)
+    Mactor.start()
+    Mactor ! "start"
 
-      N = N+1
+    var h, m= true
+    var mapOfNumCat: Map[String, Int] = Map()
+    var queue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
 
+    while(h || m)
+    receive {
+      case (x:PriorityQueue[(Data)]) =>
+        println("Recieved priority queue")
+        queue=x
+        h=false
+      case (y:Map[String, Int]) =>
+        println("Recieved map")
+        mapOfNumCat=y
+        m=false
     }
 
-    val queue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
 
-    putStuffInQueue(queue, dataList)
-
-    //number of top k
-    val k = args(1).toInt
 
     var topK = new Array[Data](k)
 
@@ -215,14 +338,13 @@ object Main {
     for (i <-0 until topK.length){
       println(topK(i).getScore())
     }
-
+    println("hypermap size:"+HyperMap.size)
     HyperMap.foreach { i =>
       println("Key: "+ i.getCategory())
       println("Value: "+ mapOfNumCat(i.getCategory()) )
       println("hyperval: "+i.getScore())
-    }*/
+    }
 
   }
 
 }
-
