@@ -2,29 +2,55 @@
  * Created by Gabriela & Grace.
  */
 
-import scala.collection.mutable.{Map, PriorityQueue}
-import scala.io.Source
 import scala.actors.Actor
 import scala.actors.Actor._
+import scala.collection.mutable
+import scala.collection.mutable.{Map, PriorityQueue}
+import scala.io.Source
 
 object Main {
 
   class Field[T] (var value: T)
 
-  class readingInput( ) extends Actor{
+  class readingInput(k: Int) extends Actor{
+    var myHeap = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
+    var dataInst = new Data()
+    var counter = 0
     def act() = loop{
-      react{
-        case (mapOfNumCat: Map[String, Int], data:Data, myQueue: PriorityQueue[Data]) =>{
-          if (!mapOfNumCat.contains(data.getCategory())) {
-            mapOfNumCat += (data.getCategory() -> 1)
+      react  {
+        case (score: Double, cat: String) => {
+          println("im here")
+          dataInst.setScore(score)
+          dataInst.setCategory(cat)
+          if (isFull(counter, k)){
+            val it = Iterator(myHeap)
+            myHeap = myHeap.filter(it => it != myHeap.min(Ordering.by(greaterThan)))
+            counter += 1
           }
           else {
-            mapOfNumCat.update(data.getCategory(), mapOfNumCat(data.getCategory())+1)
+            myHeap += dataInst
+            counter += 1
           }
         }
-        /*case (x: String, data: Data){
 
-      }*/
+        case (mapOfNumCat: Map[String, Int], category: String) =>{
+
+        }
+        /*case (false) =>{
+          println("false")
+          println("printing heap: ")
+          myHeap += dataInst
+          printQueue(myHeap)
+        }
+        case (true) => {
+
+          printQueue(myHeap)
+        }*/
+        case ("print") =>  {
+          println(myHeap.size)
+          println("printing heap: ")
+          printQueue(myHeap)
+        }
       }
     }
   }
@@ -70,31 +96,15 @@ object Main {
       getTopK(myQueue.tail, temp, arr, index)
     }
   }*/
-  def getTopK(myQueue: PriorityQueue[Data], k: Int, data: Data) : PriorityQueue[Data] = {
-    println("Queue size: "+ myQueue.size)
-    if (myQueue.size == k){
-      var temp = myQueue.min(Ordering.by(greaterThan))
-      println("last: " + temp.getScore())
-      println("data: " + data.getScore())
-      if (temp.getScore() < data.getScore()) {
-        var  newQueue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
-        if (!myQueue.isEmpty) {
-          printQueue(myQueue)
-          val it = Iterator(myQueue)
-          newQueue = myQueue.filter(it => it != myQueue.min(Ordering.by(greaterThan)))
 
-        }
-        newQueue += data
-        printQueue(newQueue)
-        newQueue
-      }
-      else {
-        myQueue
-      }
+
+
+  def isFull(counter: Int, k: Int) : Boolean = {
+    if (counter >= k){
+      true
     }
     else {
-      myQueue += data
-      myQueue
+      false
     }
   }
 
@@ -187,53 +197,92 @@ object Main {
   def main(args: Array[String]) : Unit = {
 
     val me= self
+    val moi = self
+
+
     val fileName = args(0)
     var data = " "
-    var dataList: List[Data] = List()
 
     //pop size
     var N = 0
+
     var queue = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
+
     //number of top k
     val k = args(1).toInt
-    var mapOfNumCat : Map[String,Int] = Map()
-    var actor =  new readingInput()
 
-    actor.start
-    for (line <- Source.fromFile(fileName).getLines()){
-      var dataInst = new Data()
-      data = line.split(" ")(0)
-      dataInst.setScore(data.toDouble)
-      data = line.split(" ")(1)
-      dataInst.setCategory(data)
-      println("Data: " + data)
 
-      /*var mapOfNumCat : Map[String,Int] = Map()
-      for (line <- Source.fromFile(fileName).getLines()){
+    val reader = actor {
+      var myHeap = new PriorityQueue[(Data)]()(Ordering.by(greaterThan))
+      var sum= 0
+      var counter = 0
+      var mapOfNumCat : Map[String,Int] = Map()
+
+      loop {
         var dataInst = new Data()
-        data = line.split(" ")(0)
-        dataInst.setScore(data.toDouble)
-        data = line.split(" ")(1)
-        dataInst.setCategory(data)
 
-        println("Data: " + data)
-        println(isNewCategory(dataList, data))
-        if (isNewCategory(dataList, data)){
-          println("running")
-          mapOfNumCat += (data -> 1)
+        receive {
+          case (score: Double, cat: String) =>{
+            println("counter: " + counter)
+            println("k: " + k)
+            dataInst.setScore(score)
+            dataInst.setCategory(cat)
+
+            if (!mapOfNumCat.contains(cat)) {
+              mapOfNumCat += (cat -> 1)
+            }
+            else {
+              mapOfNumCat.update(cat, mapOfNumCat(cat)+1)
+            }
+
+            if (isFull(counter, k)){
+              val it = Iterator(myHeap)
+              myHeap = myHeap.filter(it => it != myHeap.min(Ordering.by(greaterThan)))
+              myHeap += dataInst
+              counter += 1
+            }
+            else {
+              myHeap += dataInst
+              counter += 1
+            }
+            println("printing heap: ")
+            printQueue(myHeap)
+          }
+          case "heap" => moi ! myHeap
+          case "map" => moi ! mapOfNumCat
         }
-        else {
-          println("wtf")
-          mapOfNumCat.update(data, mapOfNumCat(data)+1)
-        }*/
-
-      dataList = dataList :+ (dataInst)
-      queue = getTopK(queue, k, dataInst)
-      N = N+1
+      }
     }
 
+    for (line <- Source.fromFile(fileName).getLines()){
+
+      reader ! (line.split(" ")(0).toDouble , line.split(" ")(1))
+      N = N+1
+    }
+    var mapOfNumCat : Map[String,Int] = Map()
+
+    reader ! "heap"
+    receive {
+      case(x: mutable.PriorityQueue[Data])=>{
+        queue = x
+      }
+    }
+
+    reader ! "map"
+    receive {
+      case (y: Map[String, Int]) =>{
+        mapOfNumCat = y
+      }
+    }
     println("Printing queue: ")
     printQueue(queue)
+
+    println("Map printing:")
+
+    mapOfNumCat.keys.foreach{ i =>
+      println("Key: " + i)
+      println("value: " + mapOfNumCat(i))
+    }
 
     var topK = new Array[Data](k)
 
@@ -260,9 +309,9 @@ object Main {
 
     //HyperMap= merge_sort(HyperMap)
 
-    for (i <-0 until topK.length){
+    /*for (i <-0 until topK.length){
       println(topK(i).getScore())
-    }
+    }*/
 
     HyperMap.foreach { i =>
       println("Key: "+ i.getCategory())
