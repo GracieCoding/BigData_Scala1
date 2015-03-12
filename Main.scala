@@ -2,29 +2,26 @@
  * Created by Gabriela & Grace.
  */
 
-import scala.collection.mutable.{Map, PriorityQueue}
-import scala.io.Source
 import scala.actors.Actor
 import scala.actors.Actor._
+import scala.collection.mutable
+import scala.collection.mutable.{Map, PriorityQueue}
+import scala.io.Source
 
 
 object Main {
 
-  class Field[T] (var value: T)
-
-  //Sees if a category is new or not
-  def isNewCategory(myList: List[Data], x: String, field: Field[Int]): Unit = {
-    if (!myList.isEmpty){
-      if (myList.head.getCategory() == x) {
-        field.value = 0
-      }
-      isNewCategory(myList.tail, x, field)
-    }
+  //Function to order the queue by
+  def greaterThan(x: Data): BigDecimal = {
+    x.getScore()
   }
 
-  //Function to order the queue by
-  def greaterThan(x: Data): Double = {
-    x.getScore()
+
+  def printQueue(myQueue: PriorityQueue[Data]): Unit ={
+    if (!myQueue.isEmpty){
+      println(myQueue.head.getScore())
+      printQueue(myQueue.tail)
+    }
   }
 
   def isFull(counter: Int, k: Int) : Boolean = {
@@ -36,29 +33,6 @@ object Main {
     }
   }
 
-  /*def printQueue(myQueue: PriorityQueue[Data]): Unit ={
-    if (!myQueue.isEmpty){
-      println(myQueue.head.getScore())
-      printQueue(myQueue.tail)
-    }
-  }*/
-
-  def putStuffInQueue(myQueue: PriorityQueue[Data], myList: List[Data]) : Unit = {
-    if (!myList.isEmpty){
-      myQueue.enqueue(myList.head)
-      putStuffInQueue(myQueue, myList.tail)
-    }
-  }
-
-  def getTopK(myQueue: PriorityQueue[Data], k: Int, arr:Array[Data], index: Field[Int]) : Unit = {
-    var temp = k;
-    if (k > 0){
-      temp = temp-1
-      arr(index.value) = myQueue.head
-      index.value = index.value + 1
-      getTopK(myQueue.tail, temp, arr, index)
-    }
-  }
 
   class HypActor extends Actor {
     def act {
@@ -108,7 +82,8 @@ object Main {
 
 
   //look at List on web and find length func name
-  def merge_sort(m: List[BData]): List[BData] = {
+
+  def merge_sort(m: List[Data]): List[Data] = {
     if (m.length <= 1)
       return m
     var (left, right) = m.splitAt(m.length / 2)
@@ -119,8 +94,8 @@ object Main {
     merge(left, right)
   }
 
-  def merge(left: List[BData], right: List[BData]):List[BData] = {
-    var result= List[BData]()
+  def merge(left: List[Data], right: List[Data]):List[Data] = {
+    var result= List[Data]()
     var l= left; var r=right
     while (!l.isEmpty && !r.isEmpty) {
       if (l.head.getScore() <= r.head.getScore() ){
@@ -142,6 +117,7 @@ object Main {
     }
     return result
   }
+
 
 
   //actor creates slave actors that do the work, waits till they send back result to terminate
@@ -287,15 +263,19 @@ object Main {
   }
 
 
+
   def main(args: Array[String]) : Unit = {
 
     val me= self
+    val moi = self
+
+
     val fileName = args(0)
     var data = " "
-    var dataList: List[Data] = List()
-    var categoryNum = new Field(1)
+
     //pop size
     var N = 0
+
     val k= args(1).toInt
 
 
@@ -322,15 +302,12 @@ object Main {
 
 
 
+
     var topK = new Array[Data](k)
 
-    var index = new Field(0)
-
-    getTopK(queue, k, topK, index)
-
-    var HyperMap: List[BData] = List()
+    var HyperMap: List[Data] = List()
     var Hactors: List[HypActor] = List()
-
+    println("pause test")
     mapOfNumCat.keys.foreach { i =>
       var actor = new HypActor
       actor.start
@@ -341,7 +318,7 @@ object Main {
     while (HyperMap.size < mapOfNumCat.size){
       receive {
         case (x: BigDecimal, z: String) =>
-          var inst = new BData()
+          var inst = new Data()
           inst.setCategory(z)
           inst.setScore(x)
           HyperMap= HyperMap :+ inst
@@ -349,12 +326,14 @@ object Main {
       }
     }
 
-    HyperMap= merge_sort(HyperMap)
+    //HyperMap= merge_sort(HyperMap)
+
 
     while ( !queue.isEmpty ){
       println(queue.dequeue().getScore())
     }
     println("hypermap size:"+HyperMap.size)
+
     HyperMap.foreach { i =>
       println("Key: "+ i.getCategory())
       println("Value: "+ mapOfNumCat(i.getCategory()) )
