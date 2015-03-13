@@ -185,9 +185,11 @@ object Main {
         receive {
           case (x:Data) =>
             if (isFull(size, k)){
-              val it = Iterator(myHeap)
-              myHeap = myHeap.filter(it => it != myHeap.min(Ordering.by(greaterThan)))
-              myHeap += x
+              if(myHeap.min(Ordering.by(greaterThan)).getScore() < x.getSocre()) {
+                val it = Iterator(myHeap)
+                myHeap = myHeap.filter(it => it != myHeap.min(Ordering.by(greaterThan)))
+                myHeap += x
+              }
               size += 1
             }
             else {
