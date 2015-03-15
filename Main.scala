@@ -10,7 +10,8 @@ import scala.io.Source
 
 
 object Main {
-
+ 
+ 
  
   //Function to order the queue by
   def greaterThan(x: Data): BigDecimal = {
