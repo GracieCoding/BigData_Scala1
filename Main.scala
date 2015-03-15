@@ -11,7 +11,7 @@ import scala.io.Source
 
 object Main {
 
-  class Field[T] (var value: T)
+ 
   //Function to order the queue by
   def greaterThan(x: Data): BigDecimal = {
     x.getScore()
